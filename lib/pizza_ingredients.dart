@@ -28,9 +28,10 @@ class _PizzaIngredientItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double childSize = 60.0;
     final child = Container(
-      height: 55,
-      width: 55,
+      height: childSize,
+      width: childSize,
       decoration: const BoxDecoration(
         color: Color(0xFFF5EEE3), //FFF5EEE3 //fffae3
         shape: BoxShape.circle,

@@ -21,9 +21,9 @@ class Ingredient {
   Offset generateRandomOffset() {
     var random = Random();
     double dx = random.nextDouble();
-    dx = dx.clamp(0.22, 0.65);
+    dx = dx.clamp(0.25, 0.60);
     double dy = random.nextDouble();
-    dy = dy.clamp(0.22, 0.65);
+    dy = dy.clamp(0.25, 0.60);
     return Offset(dx, dy);
   }
 }

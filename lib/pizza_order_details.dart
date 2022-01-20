@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pizza_generator/model/ingredient.dart';
 import 'package:pizza_generator/pizza_ingredients.dart';
 import 'package:pizza_generator/pizza_send_button.dart';
@@ -32,7 +33,7 @@ class PizzaOrderDetails extends StatelessWidget {
             icon: const Icon(Icons.shopping_cart, color: Colors.black87),
           ),
         ],
-        leading: const BackButton(),
+        leading: const BackButton(color: Colors.black87),
       ),
       body: Stack(
         children: [
@@ -60,7 +61,9 @@ class PizzaOrderDetails extends StatelessWidget {
             ),
           ),
           Positioned(
-            child: PizzaSendButton(),
+            child: PizzaSendButton(
+              onTap: () {},
+            ),
             bottom: 25,
             height: _pizzaButtonSize,
             width: _pizzaButtonSize,
@@ -187,7 +190,7 @@ class _PizzaDetailsState extends State<PizzaDetails>
           children: [
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: DragTarget<Ingredient>(
                   onAccept: (ingredient) {
                     print('accept');
@@ -263,12 +266,20 @@ class _PizzaDetailsState extends State<PizzaDetails>
               ),
             ),
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 500),
+              duration: const Duration(milliseconds: 200),
               transitionBuilder: (child, animation) {
                 /*
                 SlideTransition(position: animation.drive(Tween<Offset>(begin: const Offset(0.0, 0.0), end: Offset(0.0, animation.value),)),child: child,)
                  */
-                return FadeTransition(opacity: animation, child: child);
+                return SlideTransition(
+                  position: animation.drive(
+                    Tween<Offset>(
+                      begin: Offset(0.0, 0.0),
+                      end: Offset(0.0, animation.value.clamp(0.5, 1)),
+                    ),
+                  ),
+                  child: FadeTransition(opacity: animation, child: child),
+                );
               },
               child: Text(
                 "\$$_total",
