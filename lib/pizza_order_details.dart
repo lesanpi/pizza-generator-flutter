@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pizza_generator/bloc/pizza_order_bloc.dart';
+import 'package:pizza_generator/bloc/pizza_order_provider.dart';
 import 'package:pizza_generator/model/ingredient.dart';
 import 'package:pizza_generator/model/pizza_size_state.dart';
 import 'package:pizza_generator/pizza_ingredients.dart';
@@ -8,74 +10,83 @@ import 'package:pizza_generator/pizza_size_button.dart';
 
 const _pizzaButtonSize = 70.0;
 
-class PizzaOrderDetails extends StatelessWidget {
+class PizzaOrderDetails extends StatefulWidget {
   const PizzaOrderDetails({Key? key}) : super(key: key);
 
+  @override
+  State<PizzaOrderDetails> createState() => _PizzaOrderDetailsState();
+}
+
+class _PizzaOrderDetailsState extends State<PizzaOrderDetails> {
+  final bloc = PizzaOrderBLoC();
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    return PizzaOrderProvider(
+      bloc: bloc,
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "Pizza Generator",
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 24,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: const Text(
+            "Pizza Generator",
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 24,
+            ),
+            textAlign: TextAlign.center,
           ),
-          textAlign: TextAlign.center,
+          actions: [
+            IconButton(
+              onPressed: () {},
+              icon: const Icon(
+                Icons.shopping_cart,
+                color: Colors.black87,
+                size: 30,
+              ),
+            ),
+          ],
+          leading: const BackButton(color: Colors.black87),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.shopping_cart,
-              color: Colors.black87,
-              size: 30,
-            ),
-          ),
-        ],
-        leading: const BackButton(color: Colors.black87),
-      ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            bottom: 50,
-            left: 10,
-            right: 10,
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              elevation: 10,
-              child: Column(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: PizzaDetails(),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: PizzaIngredients(),
-                  ),
-                ],
+        body: Stack(
+          children: [
+            Positioned.fill(
+              bottom: 50,
+              left: 10,
+              right: 10,
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 10,
+                child: Column(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: PizzaDetails(),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: PizzaIngredients(),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Positioned(
-            child: PizzaSendButton(
-              onTap: () {},
-            ),
-            bottom: 25,
-            height: _pizzaButtonSize,
-            width: _pizzaButtonSize,
-            left: (size.width / 2) - (_pizzaButtonSize / 2),
-          )
-        ],
+            Positioned(
+              child: PizzaSendButton(
+                onTap: () {},
+              ),
+              bottom: 25,
+              height: _pizzaButtonSize,
+              width: _pizzaButtonSize,
+              left: (size.width / 2) - (_pizzaButtonSize / 2),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -90,9 +101,6 @@ class PizzaDetails extends StatefulWidget {
 
 class _PizzaDetailsState extends State<PizzaDetails>
     with TickerProviderStateMixin {
-  final _listIngredients = <Ingredient>[];
-  //bool _focused = false;
-  int _total = 15;
   final _notifierFocused = ValueNotifier(false);
   late AnimationController _animationController;
   late AnimationController _animationRotationController;
@@ -102,11 +110,17 @@ class _PizzaDetailsState extends State<PizzaDetails>
   final _notifierPizzaSize =
       ValueNotifier<PizzaSizeState>(PizzaSizeState(PizzaSizeValue.m));
 
-  Widget _buildIngredientsWidget() {
+  Widget _buildIngredientsWidget(Ingredient deletedIngredient) {
     List<Widget> elements = [];
+    final listIngredients =
+        List.from(PizzaOrderProvider.of(context).listIngredients);
+
+    if (!deletedIngredient.isNullIngredient()) {
+      listIngredients.add(deletedIngredient);
+    }
     if (_animationList.isNotEmpty) {
-      for (int i = 0; i < _listIngredients.length; i++) {
-        Ingredient ingredient = _listIngredients[i];
+      for (int i = 0; i < listIngredients.length; i++) {
+        Ingredient ingredient = listIngredients[i];
         // print(ingredient.positions);
         //ingredient.generatePositions();
 
@@ -129,15 +143,16 @@ class _PizzaDetailsState extends State<PizzaDetails>
             fromY = _pizzaConstraints.maxHeight * (1 - animation.value);
           }
 
-          final last = i == _listIngredients.length - 1;
+          final last = (i == listIngredients.length - 1);
+          final animateElement = last && _animationController.isAnimating;
           elements.add(
             Transform(
               transform: Matrix4.identity()
                 ..translate(
-                    last
+                    animateElement
                         ? fromX + _pizzaConstraints.maxWidth * positionX
                         : _pizzaConstraints.maxWidth * positionX,
-                    last
+                    animateElement
                         ? fromY + _pizzaConstraints.maxHeight * positionY
                         : _pizzaConstraints.maxHeight * positionY),
               child: Image.asset(
@@ -197,6 +212,8 @@ class _PizzaDetailsState extends State<PizzaDetails>
 
   @override
   Widget build(BuildContext context) {
+    final bloc = PizzaOrderProvider.of(context);
+
     return Stack(
       children: [
         Column(
@@ -210,10 +227,8 @@ class _PizzaDetailsState extends State<PizzaDetails>
                     print('accept');
                     _notifierFocused.value = false;
 
-                    setState(() {
-                      _total++;
-                      _listIngredients.add(ingredient);
-                    });
+                    bloc.addIngredient(ingredient);
+
                     _buildIngredientsAnimation();
                     _animationController.forward(from: 0.0);
                   },
@@ -222,12 +237,7 @@ class _PizzaDetailsState extends State<PizzaDetails>
 
                     _notifierFocused.value = true;
 
-                    for (Ingredient _ingredientAdded in _listIngredients) {
-                      if (_ingredientAdded.compare(ingredient!)) {
-                        return false;
-                      }
-                    }
-                    return true;
+                    return !bloc.containsIngredient(ingredient!);
                   },
                   onLeave: (ingredient) {
                     print("leave");
@@ -297,12 +307,20 @@ class _PizzaDetailsState extends State<PizzaDetails>
                                           );
                                         }),
                                   ),
-                                  AnimatedBuilder(
-                                    animation: _animationController,
-                                    builder: (context, _) {
-                                      return _buildIngredientsWidget();
-                                    },
-                                  )
+                                  ValueListenableBuilder<Ingredient>(
+                                      valueListenable:
+                                          bloc.notifierDeletedIngredient,
+                                      builder: (context, deletedIngredient, _) {
+                                        animateDeletedIngredient(
+                                            deletedIngredient);
+                                        return AnimatedBuilder(
+                                          animation: _animationController,
+                                          builder: (context, _) {
+                                            return _buildIngredientsWidget(
+                                                deletedIngredient);
+                                          },
+                                        );
+                                      })
                                 ],
                               ),
                             );
@@ -312,33 +330,37 @@ class _PizzaDetailsState extends State<PizzaDetails>
                 ),
               ),
             ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) {
-                /*
-                SlideTransition(position: animation.drive(Tween<Offset>(begin: const Offset(0.0, 0.0), end: Offset(0.0, animation.value),)),child: child,)
-                 */
+            ValueListenableBuilder<int>(
+                valueListenable: bloc.notifierTotal,
+                builder: (context, _total, _) {
+                  return AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    transitionBuilder: (child, animation) {
+                      /*
+                    SlideTransition(position: animation.drive(Tween<Offset>(begin: const Offset(0.0, 0.0), end: Offset(0.0, animation.value),)),child: child,)
+                     */
 
-                return SlideTransition(
-                  position: animation.drive(
-                    Tween<Offset>(
-                      begin: Offset(0.0, 0.0),
-                      end: Offset(0.0, animation.value),
+                      return SlideTransition(
+                        position: animation.drive(
+                          Tween<Offset>(
+                            begin: Offset(0.0, 0.0),
+                            end: Offset(0.0, animation.value),
+                          ),
+                        ),
+                        child: FadeTransition(opacity: animation, child: child),
+                      );
+                    },
+                    child: Text(
+                      "\$$_total",
+                      key: UniqueKey(), //Key(_total.toString()),
+                      style: const TextStyle(
+                        fontSize: 45,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.brown,
+                      ),
                     ),
-                  ),
-                  child: FadeTransition(opacity: animation, child: child),
-                );
-              },
-              child: Text(
-                "\$$_total",
-                key: UniqueKey(), //Key(_total.toString()),
-                style: const TextStyle(
-                  fontSize: 45,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.brown,
-                ),
-              ),
-            ),
+                  );
+                }),
             const SizedBox(
               height: 15,
             ),
@@ -374,6 +396,14 @@ class _PizzaDetailsState extends State<PizzaDetails>
         ),
       ],
     );
+  }
+
+  Future<void> animateDeletedIngredient(Ingredient deletedIngredient) async {
+    if (!deletedIngredient.isNullIngredient()) {
+      await _animationController.reverse(from: 1.0);
+      final bloc = PizzaOrderProvider.of(context);
+      bloc.refreshDeletedIngredient();
+    }
   }
 
   void setPizzaState(PizzaSizeValue pizzaSize) {

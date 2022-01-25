@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+final nullIngredient = Ingredient('', '');
+
 class Ingredient {
   final String image;
   final String image_unit;
@@ -11,6 +13,10 @@ class Ingredient {
   }
 
   bool compare(Ingredient ingredient) => ingredient.image == image;
+
+  bool isNullIngredient() {
+    return compare(nullIngredient);
+  }
 
   void generatePositions() {
     for (var i = 0; i < 5; i++) {
