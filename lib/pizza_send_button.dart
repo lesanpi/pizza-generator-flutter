@@ -18,7 +18,7 @@ class _PizzaSendButtonState extends State<PizzaSendButton>
     _animationController = AnimationController(
       vsync: this,
       lowerBound: 1.0,
-      upperBound: 1.5,
+      upperBound: 1.1,
       duration: const Duration(milliseconds: 150),
       reverseDuration: const Duration(milliseconds: 200),
     );
@@ -40,8 +40,8 @@ class _PizzaSendButtonState extends State<PizzaSendButton>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        widget.onTap();
         _animateButton();
+        widget.onTap();
       },
       child: AnimatedBuilder(
         animation: _animationController,
